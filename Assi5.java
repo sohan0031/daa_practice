@@ -1,94 +1,98 @@
 import java.util.*;
 
-class Edge{
+class Edge {
     int to;
     int cost;
-
-    public Edge(int to,int cost){
-        this.to=to;
-        this.cost=cost;
+    Edge(int to, int cost) {
+        this.to = to;
+        this.cost = cost;
     }
 }
 
-public class Assi5 {
+public class RouteFinder {
 
-    public static int[] findShortestPath(List<List<Edge>> graph,int N,int source,int destination){
-        int[] dist=new int[N];
-        int[] nextNode=new int[N];
+    public static int[] shortestPathDP(List<List<Edge>> g, int n, int src, int dst) {
+        int[] dist = new int[n];
+        int[] next = new int[n];
 
-        Arrays.fill(dist,Integer.MAX_VALUE);
-        Arrays.fill(nextNode,-1);
+        for (int i = 0; i < n; i++) {
+            dist[i] = Integer.MAX_VALUE;
+            next[i] = -1;
+        }
 
-        dist[destination]=0;
+        dist[dst] = 0;
 
-        for(int i=N-2;i>=0;i--){
-            for(Edge e:graph.get(i)){
-                if(dist[e.to]!=Integer.MAX_VALUE && e.cost+dist[e.to]<dist[i]){
-                    dist[i]=e.cost+dist[e.to];
-                    nextNode[i]=e.to;
+        for (int i = n - 1; i >= 0; i--) {
+            List<Edge> edges = g.get(i);
+            for (int j = 0; j < edges.size(); j++) {
+                Edge e = edges.get(j);
+                if (dist[e.to] != Integer.MAX_VALUE) {
+                    int cand = e.cost + dist[e.to];
+                    if (cand < dist[i]) {
+                        dist[i] = cand;
+                        next[i] = e.to;
+                    }
                 }
             }
         }
-        return nextNode;
 
+        return next;
     }
 
-    public static void displayRoute(int source,int[] nextNode){
-        int node=source;
-        System.out.println("Recommended delivery route: ");
-        System.out.print(node);
+    public static void printRoute(int src, int dst, int[] next) {
+        if (next[src] == -1 && src != dst) {
+            System.out.println("No route found from " + src + " to " + dst);
+            return;
+        }
 
-        while(nextNode[node]!=-1){
-            node=nextNode[node];
-            System.out.print("-> "+node);
+        int cur = src;
+        System.out.print(cur);
+        while (cur != dst && next[cur] != -1) {
+            cur = next[cur];
+            System.out.print(" -> " + cur);
         }
         System.out.println();
     }
+
     public static void main(String[] args) {
-        Scanner sc=new Scanner(System.in);
+        Scanner sc = new Scanner(System.in);
 
-        System.out.println("Swiftcart logistics Route Optimization");
-        System.out.print("Enter the Total Number of Nodes: ");
-        int N=sc.nextInt();
+        System.out.print("How many nodes in the multistage graph? ");
+        int n = sc.nextInt();
 
-        List<List<Edge>> graph=new ArrayList<>();
-
-        for(int i=0;i<N;i++){
-            graph.add(new ArrayList<>());
+        List<List<Edge>> graph = new ArrayList<List<Edge>>();
+        for (int i = 0; i < n; i++) {
+            graph.add(new ArrayList<Edge>());
         }
 
-        System.out.print("Enter the possible routes between the locations: ");
-        int E=sc.nextInt();
+        System.out.print("How many directed edges? ");
+        int m = sc.nextInt();
 
-        System.out.println("Enter the Route details in Format : From To Cost");
-
-        for(int i=0;i<E;i++){
-            int u=sc.nextInt();
-            int v=sc.nextInt();
-            int cost=sc.nextInt();
-            graph.get(u).add(new Edge(v,cost));
+        System.out.println("Enter each edge as: from to cost");
+        for (int i = 0; i < m; i++) {
+            int from = sc.nextInt();
+            int to = sc.nextInt();
+            int cost = sc.nextInt();
+            graph.get(from).add(new Edge(to, cost));
         }
 
-        System.out.print("Enter the Starting Location ( Start Node ): ");
-        int source=sc.nextInt();
+        System.out.print("Source node: ");
+        int source = sc.nextInt();
 
-        System.out.print("Enter the Destination Location (Destination Point): ");
-        int destination=sc.nextInt();
+        System.out.print("Destination node: ");
+        int destination = sc.nextInt();
 
-        long startTime=System.nanoTime();
+        long start = System.nanoTime();
+        int[] nextNode = shortestPathDP(graph, n, source, destination);
+        long end = System.nanoTime();
 
-        int[] nextNode = findShortestPath(graph,N,source,destination);
+        System.out.println("\nOptimal route (if exists):");
+        printRoute(source, destination, nextNode);
 
-        long endTime=System.nanoTime();
+        double timeMs = (end - start) / 1_000_000.0;
+        System.out.println("Computation time: " + timeMs + " ms");
 
-        System.out.println();
-        System.out.println("Analyzing Delivery Route....");
-        displayRoute(source, nextNode);
-
-        System.out.println("Route Analysis Completed Successfully.");
-        System.out.println("Total Computation Time: "+(endTime-startTime)/1_000_000.0+" millisecond");
-
-        System.out.println("SwiftCargo system has Determined the most efficient delivery path.");
         sc.close();
     }
 }
+
