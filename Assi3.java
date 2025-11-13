@@ -1,102 +1,92 @@
 import java.util.*;
 
-public class Assi3 {
+class Supply {
+    String name;
+    double weight;
+    double utility;
+    boolean divisible;
 
-    static class Supply {
-        String itemName;
-        double itemWeight;
-        double itemValue;
-        boolean isDivisible;
-
-        Supply(String itemName, double itemWeight, double itemValue, boolean isDivisible) {
-            this.itemName = itemName;
-            this.itemWeight = itemWeight;
-            this.itemValue = itemValue;
-            this.isDivisible = isDivisible;
-        }
-
-        double valuePerKg() {
-            return itemValue / itemWeight;
-        }
+    Supply(String name, double weight, double utility, boolean divisible) {
+        this.name = name;
+        this.weight = weight;
+        this.utility = utility;
+        this.divisible = divisible;
     }
 
-    public static double maximizeUtility(List<Supply> supplies, double maxCapacity) {
-        supplies.sort((a, b) -> Double.compare(b.valuePerKg(), a.valuePerKg()));
-        double totalValue = 0.0;
-        double remainingCapacity = maxCapacity;
+    double utilityPerKg() {
+        return utility / weight;
+    }
+}
 
-        System.out.println("\n--- Relief Supply Loading Summary ---\n");
+public class Assi3 {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
 
-        for (Supply s : supplies) {
-            if (remainingCapacity <= 0)
-                break;
+        System.out.print("Total Items: ");
+        int n = sc.nextInt();
 
-            if (s.isDivisible) {
-                double loadWeight = Math.min(s.itemWeight, remainingCapacity);
-                double loadValue = s.valuePerKg() * loadWeight;
-                totalValue += loadValue;
-                remainingCapacity -= loadWeight;
-                System.out.printf("Loaded %.2f kg of %-15s | Utility Gained: ₹%.2f%n",
-                        loadWeight, s.itemName, loadValue);
+        List<Supply> list = new ArrayList<>();
+
+        for (int i = 1; i <= n; i++) {
+            System.out.println("\n--- Item " + i + " ---");
+            System.out.print("Name: ");
+            String name = sc.next();
+
+            System.out.print("Weight (kg): ");
+            double w = sc.nextDouble();
+
+            System.out.print("Utility (importance): ");
+            double u = sc.nextDouble();
+
+            System.out.print("Divisible? (y/n): ");
+            String flag = sc.next();
+            boolean div = flag.equalsIgnoreCase("y");
+
+            list.add(new Supply(name, w, u, div));
+        }
+
+        System.out.print("\nBoat capacity (kg): ");
+        double capacity = sc.nextDouble();
+
+        // Sort by utility per kg (descending)
+        list.sort((a, b) -> Double.compare(b.utilityPerKg(), a.utilityPerKg()));
+
+        double remaining = capacity;
+        double totalUtility = 0;
+        double used = 0;
+
+        System.out.println("\nOutput:");
+        for (Supply s : list) {
+            if (remaining <= 0) break;
+
+            if (s.divisible) {
+                double take = Math.min(s.weight, remaining);
+                double util = s.utilityPerKg() * take;
+                totalUtility += util;
+                remaining -= take;
+                used += take;
+                System.out.println(" - " + s.name + ": took " + round2(take) + " kg (utility +" + round2(util) + ")");
             } else {
-                if (s.itemWeight <= remainingCapacity) {
-                    totalValue += s.itemValue;
-                    remainingCapacity -= s.itemWeight;
-                    System.out.printf("Loaded Full Item: %-15s (%.2f kg) | Utility Gained: ₹%.2f%n",
-                            s.itemName, s.itemWeight, s.itemValue);
+                if (s.weight <= remaining) {
+                    totalUtility += s.utility;
+                    remaining -= s.weight;
+                    used += s.weight;
+                    System.out.println(" - " + s.name + ": took whole item (" + round2(s.weight) + " kg, utility +" + round2(s.utility) + ")");
                 } else {
-                    System.out.printf("Skipped %-15s (too heavy for remaining space)%n", s.itemName);
+                    System.out.println(" - " + s.name + ": skipped (too heavy to fit)");
                 }
             }
         }
 
-        System.out.println("\nRemaining Boat Capacity: " + remainingCapacity + " kg");
-        return totalValue;
+        System.out.println("\nTotal weight loaded: " + round2(used) + " / " + round2(capacity) + " kg");
+        System.out.println("Total utility on board: " + round2(totalUtility));
+        System.out.println("Free space left: " + round2(remaining) + " kg");
+
+        sc.close();
     }
 
-    public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
-        System.out.println("Emergency Relief Supply Distribution System");
-        System.out.println("----------------------------------------------");
-
-        System.out.print("Enter number of supply items: ");
-        int n = sc.nextInt();
-        sc.nextLine();
-
-        if (n <= 0) {
-            System.out.println("Invalid input. Exiting...");
-            sc.close();
-            return;
-        }
-
-        List<Supply> supplies = new ArrayList<>();
-
-        for (int i = 0; i < n; i++) {
-            System.out.println("\nEnter details for item " + (i + 1) + ":");
-            System.out.print("Item Name: ");
-            String name = sc.nextLine();
-            System.out.print("Weight (kg): ");
-            double weight = sc.nextDouble();
-            System.out.print("Utility Value (₹): ");
-            double value = sc.nextDouble();
-            System.out.print("Is Divisible? (1 = Yes, 0 = No): ");
-            boolean divisible = sc.nextInt() == 1;
-            sc.nextLine();
-            supplies.add(new Supply(name, weight, value, divisible));
-        }
-
-        System.out.print("\nEnter boat capacity (kg): ");
-        double capacity = sc.nextDouble();
-
-        long start = System.nanoTime();
-        double totalValue = maximizeUtility(supplies, capacity);
-        long end = System.nanoTime();
-
-        double execTime = (end - start) / 1_000_000.0;
-
-        System.out.println("\n✅ Maximum Total Utility Value Carried: ₹" + totalValue);
-        System.out.println("⏱ Execution Time: " + execTime + " milliseconds");
-        System.out.println("\nRelief supplies are ready for delivery. ✅");
-        sc.close();
+    // round to 2 decimal places
+    private static String round2(double x) {
+        return String.format("%.2f", x);
     }
 }
